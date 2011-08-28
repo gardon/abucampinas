@@ -1,4 +1,3 @@
-/* $Id: aggregator.css,v 1.1 2006/08/14 07:14:48 drumm Exp $ */
 
 #aggregator .feed-source .feed-title {
   margin-top: 0;
@@ -7,7 +6,7 @@
   margin-bottom: 0.75em;
 }
 #aggregator .feed-source .feed-icon {
-  float: right;
+  float: right; /* LTR */
   display: block;
 }
 #aggregator .feed-item {
