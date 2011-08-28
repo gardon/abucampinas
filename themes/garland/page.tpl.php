@@ -2,8 +2,8 @@
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $language ?>" lang="<?php print $language ?>">
   <head>
-    <title><?php print $head_title ?></title>
     <?php print $head ?>
+    <title><?php print $head_title ?></title>
     <?php print $styles ?>
     <?php print $scripts ?>
     <style type="text/css" media="print">@import "<?php print base_path() . path_to_theme() ?>/print.css";</style>
@@ -43,10 +43,6 @@
           }
         ?>
         </div>
-	<div id="cross-floater">
-		<table><tr></tr></table>
-		<!--<h1><img src="files/cross.png" id="cross" /></h1>-->
-	</div>
 
         <?php if (isset($primary_links)) : ?>
           <?php print theme('links', $primary_links, array('class' => 'links primary-links')) ?>
@@ -66,7 +62,7 @@
 
       <div id="center"><div id="squeeze"><div class="right-corner"><div class="left-corner">
           <?php if ($breadcrumb): print $breadcrumb; endif; ?>
-          <?php if ($mission): print '<div id="mission" class="sticky">'. $mission .'</div>'; endif; ?>
+          <?php if ($mission): print '<div id="mission">'. $mission .'</div>'; endif; ?>
 
           <?php if ($tabs): print '<div id="tabs-wrapper" class="clear-block">'; endif; ?>
           <?php if ($title): print '<h2'. ($tabs ? ' class="with-tabs"' : '') .'>'. $title .'</h2>'; endif; ?>
