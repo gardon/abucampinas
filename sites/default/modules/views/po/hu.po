@@ -56,8 +56,8 @@ msgid "Title"
 msgstr "Cím"
 
 #: views.info:0 views_rss.info:0 views_theme_wizard.info:0 views_ui.info:0
-msgid "$Name: DRUPAL-5--1-6 $"
-msgstr "$Name: DRUPAL-5--1-6 $"
+msgid "$Name: DRUPAL-5--1-8 $"
+msgstr "$Name: DRUPAL-5--1-8 $"
 
 #: modules/views_comment.inc:26 modules/views_node.inc:17
 msgid "With updated mark"

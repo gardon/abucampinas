@@ -1,5 +1,5 @@
 <?php
-// $Id: views_cache.inc,v 1.2.2.18 2007/07/14 19:12:02 merlinofchaos Exp $
+// $Id: views_cache.inc,v 1.2.2.20 2008/05/10 19:35:25 merlinofchaos Exp $
 
 // Load all our module 'on behalfs'.
 // Whenever we decide we need this, load our module 'on behalfs'.
@@ -77,13 +77,13 @@ function _views_get_tables($full = false) {
     }
     else {
       $table_data = module_invoke_all('views_tables');
-      
+
       // allow modules to alter the definitions supplied others
       foreach (module_implements('views_tables_alter') as $module) {
         $function = $module . '_views_tables_alter';
         $function($table_data);
       }
-      
+
       $views_tables['tables'] = $table_data;
 
       foreach ($table_data as $name => $table) {
@@ -99,7 +99,15 @@ function _views_get_tables($full = false) {
                 $data['option'] = array('#type' => 'select', '#options' => $data['option']);
               }
             }
-            if ($data['list']) {
+            if ($data['value'] && !is_array($data['value'])) {
+              if ($data['value'] == 'string' || $data['value'] == 'integer') {
+                $data['value'] = array('#type' => 'textfield', '#size' => 10, '#maxlength' => 255);
+              }
+              else {
+                $data['value'] = array('#type' => 'select', '#values' => $data['value']);
+              }
+            }
+            else if ($data['list']) {
               $data['value'] = array('#type' => 'select', '#options' => $data['list'], '#validate' => array('views_filter_validate_array' => array($data['name'])));
               if ($data['list-type'] != 'select') {
                 $data['value']['#multiple'] = TRUE;
@@ -276,14 +284,9 @@ function _views_get_query(&$view, $args, $filters) {
   else {
     views_load_query();
     $info = _views_build_query($view, $args, $filters);
-    $data = array(
-        'query' => _views_replace_args($info['query'], $info['args']),
-        'countquery' => _views_replace_args($info['countquery'], $info['args']),
-    );
     if ($view->is_cacheable) {
-      cache_set('views_query:' . $view->name, 'cache_views', serialize($data));
+      cache_set('views_query:' . $view->name, 'cache_views', serialize($info));
     }
-    $info = array_merge($info, $data);
   }
 
   // Run-time replacement so we can do cacheing

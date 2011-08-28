@@ -1,5 +1,5 @@
 <?php
-// $Id: views_ui.module,v 1.44.2.25 2007/07/14 19:54:20 merlinofchaos Exp $
+// $Id: views_ui.module,v 1.44.2.31 2010/06/17 02:45:19 merlinofchaos Exp $
 
 // ---------------------------------------------------------------------------
 // Drupal Hooks
@@ -112,7 +112,7 @@ function views_ui_menu($may_cache) {
     $items[] = array('path' => 'admin/build/views/import',
       'title' => t('Import'),
       'callback' => 'views_ui_admin_import_page',
-      'access' => user_access('administer views'),
+      'access' => user_access('administer views') && user_access('use PHP for block visibility'),
       'type' => MENU_LOCAL_TASK);
     $items[] = array('path' => 'admin/build/views/tools',
       'title' => t('Tools'),
@@ -136,9 +136,9 @@ function views_ui_menu($may_cache) {
       'type' => MENU_CALLBACK);
   }
   else {
-    if (user_access('administer views') && 
-        arg(0) == 'admin' && 
-        arg(1) == 'build' && 
+    if (user_access('administer views') &&
+        arg(0) == 'admin' &&
+        arg(1) == 'build' &&
         arg(2) == 'views') {
       $view = views_load_view(arg(3));
       if ($view) {
@@ -230,14 +230,14 @@ function views_ui_admin_page() {
     }
 
     $items[] = array(
-      $view->name, 
-      filter_xss_admin(views_get_title($view, 'admin')), 
-      $view->description, 
-      implode(', ', $provides), 
-      $url, 
+      $view->name,
+      filter_xss_admin(views_get_title($view, 'admin')),
+      $view->description,
+      implode(', ', $provides),
+      $url,
       theme('links', array(
-        array('title' => t('Edit'), 'href' => "admin/build/views/$view->name/edit"), 
-        array('title' => t('Export'), 'href' => "admin/build/views/$view->name/export"), 
+        array('title' => t('Edit'), 'href' => "admin/build/views/$view->name/edit"),
+        array('title' => t('Export'), 'href' => "admin/build/views/$view->name/export"),
         array('title' => t('Delete'), 'href' => "admin/build/views/delete/$view->vid"),
         array('title' => t('Clone'), 'href' => "admin/build/views/$view->name/clone"),
       ))
@@ -297,20 +297,23 @@ function views_ui_admin_page() {
 
     $links = array();
     $links[] = array('title' => t('Add'), 'href' => "admin/build/views/add/$view->name");
+
+    $token_enable = drupal_get_token('views-enable');
+    $token_disable = drupal_get_token('views-disable');
     if ($status == t('Enabled')) {
-      $links[] = array('title' => t('Disable'), 'href' => "admin/build/views/disable/$view->name");
+      $links[] = array('title' => t('Disable'), 'href' => "admin/build/views/disable/$view->name", 'query' => 'token=' . $token_disable);
     }
     else if ($status == t('Disabled')) {
-      $links[] = array('title' => t('Enable'), 'href' => "admin/build/views/enable/$view->name");
+      $links[] = array('title' => t('Enable'), 'href' => "admin/build/views/enable/$view->name", 'query' => 'token=' . $token_enable);
     }
 
     $items[] = array(
-      $view->name, 
+      $view->name,
       filter_xss_admin(views_get_title($view, 'menu')),
-      $view->description, 
-      implode(', ', $provides), 
-      $url, 
-      $status, 
+      $view->description,
+      implode(', ', $provides),
+      $url,
+      $status,
       theme('links', $links)
     );
   }
@@ -349,30 +352,40 @@ function views_ui_admin_tools_submit($form_id, $form) {
  * Page to enable a disabled default view
  */
 function views_ui_admin_enable_page($view = '') {
-  views_load_cache();
+  if (isset($_GET['token']) && drupal_valid_token($_GET['token'], 'views-enable')) {
+    views_load_cache();
 
-  if ($view) {
-    $views_status = variable_get('views_defaults', array());
-    $views_status[$view] = 'enabled';
-    variable_set('views_defaults', $views_status);
-    menu_rebuild();
+    if ($view) {
+      $views_status = variable_get('views_defaults', array());
+      $views_status[$view] = 'enabled';
+      variable_set('views_defaults', $views_status);
+      menu_rebuild();
+    }
+    drupal_goto('admin/build/views');
   }
-  drupal_goto('admin/build/views');
+  else {
+    return drupal_access_denied();
+  }
 }
 
 /*
  * Page to disable an enabled default view
  */
 function views_ui_admin_disable_page($view = '') {
-  views_load_cache();
+  if (isset($_GET['token']) && drupal_valid_token($_GET['token'], 'views-disable')) {
+    views_load_cache();
 
-  if ($view) {
-    $views_status = variable_get('views_defaults', array());
-    $views_status[$view] = 'disabled';
-    variable_set('views_defaults', $views_status);
-    menu_rebuild();
+    if ($view) {
+      $views_status = variable_get('views_defaults', array());
+      $views_status[$view] = 'disabled';
+      variable_set('views_defaults', $views_status);
+      menu_rebuild();
+    }
+    drupal_goto('admin/build/views');
   }
-  drupal_goto('admin/build/views');
+  else {
+    return drupal_access_denied();
+  }
 }
 
 /*
@@ -384,7 +397,7 @@ function views_ui_admin_import_page() {
   if ($_POST['form_id'] == 'views_edit_view') {
     return views_ui_admin_add_page();
   }
-  drupal_set_title("Import a View");
+  drupal_set_title(t('Import a View'));
 
   return drupal_get_form('views_ui_admin_import', $form);
 }
@@ -898,7 +911,7 @@ function views_edit_view($view, $op = '') {
     '#description' => t('Text to display at the top of the view. May contain an explanation or links or whatever you like. Optional.'),
   );
 
-  $form['page-info']['page_header_fieldset']['page_header_format'] = filter_form($view->page_header_format, 1, array('page_header_format'));
+  $form['page-info']['page_header_fieldset']['format'] = filter_form($view->page_header_format, 1, array('page_header_format'));
 
   $form['page-info']['page_footer_fieldset'] = array(
     '#type' => 'fieldset',
@@ -914,7 +927,7 @@ function views_edit_view($view, $op = '') {
     '#description' => t('Text to display at the bottom of the view. May contain an explanation or links or whatever you like. Optional.'),
   );
 
-  $form['page-info']['page_footer_fieldset']['page_footer_format'] = filter_form($view->page_footer_format, 1, array('page_footer_format'));
+  $form['page-info']['page_footer_fieldset']['format'] = filter_form($view->page_footer_format, 1, array('page_footer_format'));
 
   $form['page-info']['page_empty_fieldset'] = array(
     '#type' => 'fieldset',
@@ -930,7 +943,7 @@ function views_edit_view($view, $op = '') {
     '#description' => t('Text to display if a view returns no nodes. Optional.'),
   );
 
-  $form['page-info']['page_empty_fieldset']['page_empty_format'] = filter_form($view->page_empty_format, 1, array('page_empty_format'));
+  $form['page-info']['page_empty_fieldset']['format'] = filter_form($view->page_empty_format, 1, array('page_empty_format'));
 
   $form['page-info']['menu-info'] = array(
     '#type' => 'fieldset',
@@ -1091,7 +1104,7 @@ function views_edit_view($view, $op = '') {
     '#description' => t('Text to display at the top of the view. May contain an explanation or links or whatever you like. Optional.'),
   );
 
-  $form['block-info']['block_header_fieldset']['block_header_format'] = filter_form($view->block_header_format, 1, array( 'block_header_format'));
+  $form['block-info']['block_header_fieldset']['format'] = filter_form($view->block_header_format, 1, array('block_header_format'));
 
   $form['block-info']['block_footer_fieldset'] = array(
     '#type' => 'fieldset',
@@ -1116,7 +1129,7 @@ function views_edit_view($view, $op = '') {
     '#description' => t('Text to display at the bottom of the view. May contain an explanation or links or whatever you like. Optional.'),
   );
 
-  $form['block-info']['block_footer_fieldset']['block_footer_format'] = filter_form($view->block_footer_format, 1, array( 'block_footer_format'));
+  $form['block-info']['block_footer_fieldset']['format'] = filter_form($view->block_footer_format, 1, array('block_footer_format'));
 
   $form['block-info']['block_empty_fieldset'] = array(
     '#type' => 'fieldset',
@@ -1141,7 +1154,7 @@ function views_edit_view($view, $op = '') {
     '#description' => t('Text to display if a view results in no nodes. Optional.'),
   );
 
-  $form['block-info']['block_empty_fieldset']['block_empty_format'] = filter_form($view->block_empty_format, 1, array( 'block_empty_format'));
+  $form['block-info']['block_empty_fieldset']['format'] = filter_form($view->block_empty_format, 1, array('block_empty_format'));
 
   $access = user_access('use PHP for block visibility');
   if ($access) {
@@ -1716,6 +1729,7 @@ function views_ui_render_section(&$form, $items, $header, $section, &$collapsed)
  * Render the add buttons for one of the dynamic sections on our form.
  */
 function views_ui_render_section_add(&$form, $items,  $label) {
+  asort($form['id']['#options']);
   foreach ($items as $item) {
     $row[] = drupal_render($form[$item], false);
   }
@@ -1959,9 +1973,9 @@ function views_create_view_code($vid) {
     $output .= "  \$view->block_use_page_empty = " . views_tf($view->block_use_page_empty) . ";\n";
   }
 
-  $output .= "  \$view->sort = array (\n";
+  $output .= "  \$view->sort = array(\n";
   foreach ($view->sort as $sort) {
-    $output .= "    array (\n";
+    $output .= "    array(\n";
     $fieldbits = explode('.', $sort['field']);
     $output .= "      'tablename' => " . var_export($fieldbits[0], true) . ",\n";
     $output .= "      'field' => " . var_export($fieldbits[1], true) . ",\n";
@@ -1972,9 +1986,9 @@ function views_create_view_code($vid) {
   }
   $output .= "  );\n";
 
-  $output .= "  \$view->argument = array (\n";
+  $output .= "  \$view->argument = array(\n";
   foreach ($view->argument as $argument) {
-    $output .= "    array (\n";
+    $output .= "    array(\n";
     $output .= "      'type' => " . var_export($argument['type'], true) . ",\n";
     $output .= "      'argdefault' => " . var_export($argument['argdefault'], true) . ",\n";
     $output .= "      'title' => " . var_export($argument['title'], true) . ",\n";
@@ -1985,9 +1999,9 @@ function views_create_view_code($vid) {
   }
   $output .= "  );\n";
 
-  $output .= "  \$view->field = array (\n";
+  $output .= "  \$view->field = array(\n";
   foreach ($view->field as $field) {
-    $output .= "    array (\n";
+    $output .= "    array(\n";
     $output .= "      'tablename' => " . var_export($field['tablename'], true) . ",\n";
     $output .= "      'field' => " . var_export($field['field'], true) . ",\n";
     $output .= "      'label' => " . var_export($field['label'], true) . ",\n";
@@ -2008,9 +2022,9 @@ function views_create_view_code($vid) {
   }
   $output .= "  );\n";
 
-  $output .= "  \$view->filter = array (\n";
+  $output .= "  \$view->filter = array(\n";
   foreach ($view->filter as $filter) {
-    $output .= "    array (\n";
+    $output .= "    array(\n";
     $fieldbits = explode('.', $filter['field']);
     $output .= "      'tablename' => " . var_export($fieldbits[0], true) . ",\n";
     $output .= "      'field' => " . var_export($fieldbits[1], true) . ",\n";
@@ -2022,9 +2036,9 @@ function views_create_view_code($vid) {
   }
   $output .= "  );\n";
 
-  $output .= "  \$view->exposed_filter = array (\n";
+  $output .= "  \$view->exposed_filter = array(\n";
   foreach ($view->exposed_filter as $filter) {
-    $output .= "    array (\n";
+    $output .= "    array(\n";
     $fieldbits = explode('.', $filter['field']);
     $output .= "      'tablename' => " . var_export($fieldbits[0], true) . ",\n";
     $output .= "      'field' => " . var_export($fieldbits[1], true) . ",\n";

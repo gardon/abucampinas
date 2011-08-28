@@ -4,8 +4,8 @@ description = The Views UI module allows you to create and edit views.
 package = Views
 dependencies = views
 
-; Information added by drupal.org packaging script on 2007-07-14
-version = "5.x-1.6"
+; Information added by drupal.org packaging script on 2010-06-17
+version = "5.x-1.8"
 project = "views"
-datestamp = "1184451606"
+datestamp = "1276743617"
 

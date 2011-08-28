@@ -1,5 +1,5 @@
 <?php
-// $Id: views_node.inc,v 1.30.2.19 2007/07/14 19:30:51 merlinofchaos Exp $
+// $Id: views_node.inc,v 1.30.2.21 2008/05/10 20:17:00 merlinofchaos Exp $
 
 /**
  * This include file implements views functionality on behalf of node.module
@@ -460,7 +460,7 @@ function views_handler_field_body($fieldinfo, $fielddata, $value, $data) {
   }
   // Allow modules to change $node->body before viewing.
   node_invoke_nodeapi($node, 'view', $teaser, TRUE);
-  
+
   // Set the proper node part, then unset unused $node part so that a bad
   // theme can not open a security hole.
   $content = drupal_render($node->content);
@@ -831,7 +831,7 @@ function views_post_view_make_url($view, $feed_id, $arg) {
       }
     }
   }
-  
+
   return views_get_url($view, $args);
 }
 
@@ -851,11 +851,11 @@ function views_post_view_make_args($view, $feed_id, $arg) {
         $args[] = $arg;
       }
       else if ($argdata['argdefault'] != 1) {
-        $args[] = '*';
+        $args[] = $argdata['wildcard'];
       }
     }
   }
-  
+
   return $args;
 }
 
@@ -874,6 +874,7 @@ function views_handler_node_edit($fieldinfo, $fielddata, $value, $data) {
   // try to build a fake node object
   $data->type = $data->node_type;
   $data->uid = $data->node_uid;
+  $data->status = 1;
   if (node_access('update', $data)) {
     $link_text = $fielddata['options'] ? $fielddata['options'] : t('Edit');
     return l($link_text, "node/$data->nid/edit");
@@ -887,6 +888,7 @@ function views_handler_node_edit_destination($fieldinfo, $fielddata, $value, $da
   // try to build a fake node object
   $data->type = $data->node_type;
   $data->uid = $data->node_uid;
+  $data->status = 1;
   if (node_access('update', $data)) {
     $link_text = $fielddata['options'] ? $fielddata['options'] : t('Edit');
     return l($link_text, "node/$data->nid/edit", NULL, drupal_get_destination());
@@ -900,6 +902,7 @@ function views_handler_node_delete($fieldinfo, $fielddata, $value, $data) {
   // try to build a fake node object
   $data->type = $data->node_type;
   $data->uid = $data->node_uid;
+  $data->status = 1;
   if (node_access('delete', $data)) {
     $link_text = $fielddata['options'] ? $fielddata['options'] : t('Delete');
     return l($link_text, "node/$data->nid/delete");
@@ -913,6 +916,7 @@ function views_handler_node_delete_destination($fieldinfo, $fielddata, $value, $
   // try to build a fake node object
   $data->type = $data->node_type;
   $data->uid = $data->node_uid;
+  $data->status = 1;
   if (node_access('delete', $data)) {
     $link_text = $fielddata['options'] ? $fielddata['options'] : t('Delete');
     return l($link_text, "node/$data->nid/delete", NULL, drupal_get_destination());
